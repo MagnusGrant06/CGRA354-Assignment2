@@ -19,6 +19,10 @@ struct basic_model {
 	glm::vec3 color{1, 0, 0};
 	glm::mat4 modelTransform{1.0};
 
+	glm::vec3 diffuse_color = glm::vec3(1.0, 0.0, 0.0);
+	glm::vec3 specular_color = glm::vec3(1.0, 0.0, 0.0);
+	float specular_strength = 0.5;
+
 	void draw(const glm::mat4 &view, const glm::mat4 proj) {
 		using namespace glm;
 
@@ -30,6 +34,9 @@ struct basic_model {
 		glUniformMatrix4fv(glGetUniformLocation(shader, "uProjectionMatrix"), 1, false, value_ptr(proj));
 		glUniformMatrix4fv(glGetUniformLocation(shader, "uModelViewMatrix"), 1, false, value_ptr(modelview));
 		glUniform3fv(glGetUniformLocation(shader, "uColor"), 1, value_ptr(color));
+		glUniform3f(glGetUniformLocation(shader, "diffuse_light_color"), diffuse_color.x,diffuse_color.y,diffuse_color.z);
+		glUniform3f(glGetUniformLocation(shader, "specular_light_color"), specular_color.x, specular_color.y, specular_color.z);
+		glUniform1f(glGetUniformLocation(shader, "specular_strength"), specular_strength);
 
 		// draw the mesh
 		mesh.draw(); 

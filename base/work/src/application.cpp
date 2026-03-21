@@ -41,11 +41,14 @@ Application::Application(GLFWwindow *window) : m_window(window) {
 	m_model.mesh = teapot_mesh;
 	m_model.color = glm::vec3(1, 0, 0);
 	m_model.modelTransform = glm::mat4(1);
+
+	//load shader variables into cpp variables
+	glUseProgram(color_shader);
+	ambient_light = glGetUniformLocation(color_shader, "ambient_light_color");
 }
 
 
 void Application::render() {
-	
 	// retrieve the window hieght
 	int width, height;
 	glfwGetFramebufferSize(m_window, &width, &height); 
@@ -70,6 +73,8 @@ void Application::render() {
 	if (m_show_axis) cgra::drawAxis(view, proj);
 	glPolygonMode(GL_FRONT_AND_BACK, (m_showWireframe) ? GL_LINE : GL_FILL);
 
+	glUniform3f(ambient_light, ambient_color.x, ambient_color.y, ambient_color.z);
+
 	// draw the model
 	m_model.draw(view, proj);
 }
@@ -86,6 +91,12 @@ void Application::renderGUI() {
 	ImGui::Text("Application %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::SliderFloat("Distance", &m_distance, 0, 100, "%.1f");
 	ImGui::SliderFloat3("Model Color", value_ptr(m_model.color), 0, 1, "%.2f");
+
+	//custom sliders
+	ImGui::SliderFloat3("Ambient Light color", value_ptr(ambient_color), 0, 1, "%.2f");
+	ImGui::SliderFloat3("Diffuse Light color", value_ptr(m_model.diffuse_color), 0, 1, "%.2f");
+	ImGui::SliderFloat3("Specular Light color", value_ptr(m_model.specular_color), 0, 1, "%.2f");
+	ImGui::SliderFloat("Specular Strength", &m_model.specular_strength, 0, 1, "%.2f");
 
 	// extra drawing parameters
 	ImGui::Checkbox("Show axis", &m_show_axis);

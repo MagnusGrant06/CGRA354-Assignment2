@@ -19,6 +19,7 @@ private:
 
 	// oribital camera
 	float m_distance = 20.0;
+	glm::vec3 ambient_color = glm::vec3(1.0, 0.0, 0.0);
 
 	// drawing flags
 	bool m_show_axis = false;
@@ -29,6 +30,9 @@ private:
 	// contains a shader, a model transform
 	// a mesh, and other model information (color etc.)
 	basic_model m_model;
+
+	//temporary GLints for getting and altering shader information
+	GLint ambient_light;
 
 public:
 	// setup
