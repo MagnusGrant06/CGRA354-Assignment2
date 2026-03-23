@@ -19,7 +19,8 @@ private:
 
 	// oribital camera
 	float m_distance = 20.0;
-	glm::vec3 ambient_color = glm::vec3(1.0, 0.0, 0.0);
+	glm::vec2 camera_rotation = glm::vec2(0, 0);
+	glm::vec3 ambient_color = glm::vec3(0.0, 0.0, 0.0);
 
 	// drawing flags
 	bool m_show_axis = false;

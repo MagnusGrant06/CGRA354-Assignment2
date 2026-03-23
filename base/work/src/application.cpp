@@ -64,16 +64,20 @@ void Application::render() {
 	glEnable(GL_DEPTH_TEST); 
 	glDepthFunc(GL_LESS);
 
+	//update ambient light with user values
+	glUniform3f(ambient_light, ambient_color.x, ambient_color.y, ambient_color.z);
+
 	// calculate the projection and view matrix
 	mat4 proj = perspective(1.f, float(width) / height, 0.1f, 1000.f);
 	mat4 view = translate(mat4(1), vec3(0, -5, -m_distance)); // TODO replace view matrix with the camera transform
+	view = rotate(mat4(view), glm::radians(camera_rotation.x), glm::vec3(0.0, 1.0, 0.0));
+	view = rotate(mat4(view), glm::radians(camera_rotation.y), glm::vec3(1.0, 0.0, 0.0));
+	view = translate(view, vec3(0, -3, 0));
 
 	// draw options
 	if (m_show_grid) cgra::drawGrid(view, proj);
 	if (m_show_axis) cgra::drawAxis(view, proj);
 	glPolygonMode(GL_FRONT_AND_BACK, (m_showWireframe) ? GL_LINE : GL_FILL);
-
-	glUniform3f(ambient_light, ambient_color.x, ambient_color.y, ambient_color.z);
 
 	// draw the model
 	m_model.draw(view, proj);
@@ -97,6 +101,7 @@ void Application::renderGUI() {
 	ImGui::SliderFloat3("Diffuse Light color", value_ptr(m_model.diffuse_color), 0, 1, "%.2f");
 	ImGui::SliderFloat3("Specular Light color", value_ptr(m_model.specular_color), 0, 1, "%.2f");
 	ImGui::SliderFloat("Specular Strength", &m_model.specular_strength, 0, 1, "%.2f");
+	ImGui::SliderFloat2("Rotate Camera", value_ptr(camera_rotation), 0, 360);
 
 	// extra drawing parameters
 	ImGui::Checkbox("Show axis", &m_show_axis);
