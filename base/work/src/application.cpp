@@ -69,11 +69,18 @@ void Application::render() {
 
 	// calculate the projection and view matrix
 	mat4 proj = perspective(1.f, float(width) / height, 0.1f, 1000.f);
-	mat4 view = translate(mat4(1), vec3(0, -5, -m_distance)); // TODO replace view matrix with the camera transform
-	view = rotate(mat4(view), glm::radians(camera_rotation.x), glm::vec3(0.0, 1.0, 0.0));
-	view = rotate(mat4(view), glm::radians(camera_rotation.y), glm::vec3(1.0, 0.0, 0.0));
-	view = translate(view, vec3(0, -3, 0));
 
+	//calculate rotation whilst using sliders or mouse, using m_distance as radius of coordinate sphere
+	float camera_x = sin(radians(camera_rotation.x)) * m_distance * cos(radians(camera_rotation.y));
+	float camera_z = cos(radians(camera_rotation.x)) * m_distance * cos(radians(camera_rotation.y));
+	float camera_y = sin(radians(camera_rotation.y)) * m_distance;
+
+	mat4 camera = glm::lookAt(vec3(camera_x, camera_y, camera_z),
+							  vec3(0.0f, 0.0f, 0.0f),
+							  vec3(0.0f, 1.0f, 0.0f));
+
+	//final translation to move pot to roughly middle of screen
+	mat4 view = translate(camera, vec3(0.0, -5.0, 0.0));
 	// draw options
 	if (m_show_grid) cgra::drawGrid(view, proj);
 	if (m_show_axis) cgra::drawAxis(view, proj);
@@ -101,7 +108,7 @@ void Application::renderGUI() {
 	ImGui::SliderFloat3("Diffuse Light color", value_ptr(m_model.diffuse_color), 0, 1, "%.2f");
 	ImGui::SliderFloat3("Specular Light color", value_ptr(m_model.specular_color), 0, 1, "%.2f");
 	ImGui::SliderFloat("Specular Strength", &m_model.specular_strength, 0, 1, "%.2f");
-	ImGui::SliderFloat2("Rotate Camera", value_ptr(camera_rotation), 0, 360);
+	ImGui::SliderFloat2("Rotate Camera", value_ptr(camera_rotation), -89.0f, 89.0f);
 
 	// extra drawing parameters
 	ImGui::Checkbox("Show axis", &m_show_axis);
@@ -118,16 +125,30 @@ void Application::renderGUI() {
 
 void Application::cursorPosCallback(double xpos, double ypos) {
 	(void)xpos, ypos; // currently un-used
+	if (!mouse_held) { return; }
+	double xpos_to_rotation = (xpos / (double)m_windowsize.x) * 360.0f;
+	double ypos_to_rotation = (ypos / (double)m_windowsize.y) * 360.0f;
+	camera_rotation.x = xpos_to_rotation;
+	camera_rotation.y = ypos_to_rotation;
+	
 }
 
 
 void Application::mouseButtonCallback(int button, int action, int mods) {
 	(void)button, action, mods; // currently un-used
+	if (button == 0 && action == 1) {
+		mouse_held = true;
+	}
+	else {
+		mouse_held = false;
+	}
+
 }
 
 
 void Application::scrollCallback(double xoffset, double yoffset) {
 	(void)xoffset, yoffset; // currently un-used
+	m_distance -= yoffset;
 }
 
 

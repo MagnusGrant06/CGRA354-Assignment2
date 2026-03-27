@@ -35,6 +35,8 @@ private:
 	//temporary GLints for getting and altering shader information
 	GLint ambient_light;
 
+	bool mouse_held = false;
+
 public:
 	// setup
 	Application(GLFWwindow *);
