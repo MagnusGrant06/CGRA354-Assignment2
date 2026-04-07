@@ -19,6 +19,12 @@ namespace cgra {
 		glDrawElements(mode, index_count, GL_UNSIGNED_INT, 0);
 	}
 
+	void gl_mesh::draw_instances(){
+		if (vao == 0) return;
+		glBindVertexArray(vao);
+		glDrawArraysInstanced(GL_TRIANGLES, 0, index_count, 100);
+	}
+
 	void gl_mesh::destroy() {
 		// delete the data buffers
 		glDeleteVertexArrays(1, &vao);

@@ -3,6 +3,8 @@
 #include <iostream>
 #include <string>
 #include <chrono>
+#include <random>
+#include <vector>
 
 // glm
 #include <glm/gtc/constants.hpp>
@@ -31,6 +33,12 @@ Application::Application(GLFWwindow *window) : m_window(window) {
 	color_sb.set_shader(GL_VERTEX_SHADER, CGRA_SRCDIR + std::string("//res//shaders//default_vert.glsl"));
 	color_sb.set_shader(GL_FRAGMENT_SHADER, CGRA_SRCDIR + std::string("//res//shaders//default_frag.glsl"));
 	GLuint color_shader = color_sb.build();
+	shader_builder completion_sb;
+	completion_sb.set_shader(GL_VERTEX_SHADER, CGRA_SRCDIR + std::string("//res//shaders/completion_vert.glsl"));
+	completion_sb.set_shader(GL_FRAGMENT_SHADER, CGRA_SRCDIR + std::string("//res//shaders/completion_frag.glsl"));
+
+	core_shader = color_shader;
+	completion_shader = completion_sb.build();
 
 	// build the mesh for the model
 	mesh_builder teapot_mb = load_wavefront_data(CGRA_SRCDIR + std::string("//res//assets//teapot.obj"));
@@ -45,6 +53,15 @@ Application::Application(GLFWwindow *window) : m_window(window) {
 	//load shader variables into cpp variables
 	glUseProgram(color_shader);
 	ambient_light = glGetUniformLocation(color_shader, "ambient_light_color");
+
+	//create transformations array to pass to shader
+	glUseProgram(completion_shader);
+
+	std::vector<glm::mat4> transformations = create_random_transformations();
+	glUniformMatrix4fv(glGetUniformLocation(completion_shader, "transformations"), transformations.size(), false, glm::value_ptr(transformations[0]));
+
+	std::vector<glm::vec3> random_colors = create_random_colors();
+	glUniform3fv(glGetUniformLocation(completion_shader, "colors"), random_colors.size(), value_ptr(random_colors[0]));
 }
 
 
@@ -102,13 +119,29 @@ void Application::renderGUI() {
 	ImGui::Text("Application %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::SliderFloat("Distance", &m_distance, 0, 100, "%.1f");
 	ImGui::SliderFloat3("Model Color", value_ptr(m_model.color), 0, 1, "%.2f");
-
-	//custom sliders
-	ImGui::SliderFloat3("Ambient Light color", value_ptr(ambient_color), 0, 1, "%.2f");
-	ImGui::SliderFloat3("Diffuse Light color", value_ptr(m_model.diffuse_color), 0, 1, "%.2f");
-	ImGui::SliderFloat3("Specular Light color", value_ptr(m_model.specular_color), 0, 1, "%.2f");
-	ImGui::SliderFloat("Specular Strength", &m_model.specular_strength, 0, 1, "%.2f");
 	ImGui::SliderFloat2("Rotate Camera", value_ptr(camera_rotation), -89.0f, 89.0f);
+
+	//drop down menu for choosing core, completion, and challenge
+	const char* modes[] = { "Core", "Completion", "Challenge" };
+	ImGui::Combo("Choose Part", &selected_mode, modes, sizeof(modes) / sizeof(modes[0]));
+
+	//custom sliders for core
+	if(selected_mode == 0){
+		m_model.shader = core_shader;
+		m_model.instancing = false;
+		ImGui::SliderFloat3("Ambient Light color", value_ptr(ambient_color), 0, 1, "%.2f");
+		ImGui::SliderFloat3("Diffuse Light color", value_ptr(m_model.diffuse_color), 0, 1, "%.2f");
+		ImGui::SliderFloat3("Specular Light color", value_ptr(m_model.specular_color), 0, 1, "%.2f");
+		ImGui::SliderFloat("Specular Strength", &m_model.specular_strength, 0, 1, "%.2f");
+	}
+
+	if (selected_mode == 1) {
+		m_model.instancing = true;
+		m_model.shader = completion_shader;
+		ambient_color = glm::vec3(1, 1, 1);
+		m_model.diffuse_color = glm::vec3(1, 1, 1);
+		m_model.specular_color = glm::vec3(1, 1, 1);
+	}
 
 	// extra drawing parameters
 	ImGui::Checkbox("Show axis", &m_show_axis);
@@ -122,6 +155,35 @@ void Application::renderGUI() {
 	ImGui::End();
 }
 
+std::vector<glm::mat4> Application::create_random_transformations() {
+	std::vector<glm::mat4> transformations;
+
+	std::mt19937 random(std::random_device{}());
+	std::uniform_real_distribution<float> rand_pos(-50.0f, 50.0f);
+	std::uniform_real_distribution<float> rand_rot(0.0f, 360.0f);
+	std::uniform_real_distribution<float> rand_scal(0.2f, 2.0f);
+
+	for (int i = 0; i < 100; i++) {
+		glm::mat4 matrix = glm::translate(mat4(1.0f), glm::vec3(rand_pos(random), rand_pos(random), rand_pos(random)));
+		matrix = glm::rotate(matrix, glm::radians(rand_rot(random)), glm::vec3(0, 1, 0));
+		matrix = glm::scale(matrix, glm::vec3(rand_scal(random), rand_scal(random), rand_scal(random)));
+		transformations.push_back(matrix);
+	}
+	return transformations;
+}
+
+std::vector<glm::vec3> Application::create_random_colors() {
+	std::vector<glm::vec3> colors;
+
+	std::mt19937 random(std::random_device{}());
+	std::uniform_real_distribution<float> rand_col(0.0f, 1.0f);
+
+	for (int i = 0; i < 100; i++) {
+		glm:vec3 temp_col = vec3(rand_col(random), rand_col(random), rand_col(random));
+		colors.push_back(temp_col);
+	}
+	return colors;
+}
 
 void Application::cursorPosCallback(double xpos, double ypos) {
 	(void)xpos, ypos; // currently un-used

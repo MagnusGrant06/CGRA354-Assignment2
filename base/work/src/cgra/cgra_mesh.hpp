@@ -30,6 +30,9 @@ namespace cgra {
 		// calls the draw function on mesh data
 		void draw();
 
+		//new draw function to draw multile instances
+		void draw_instances();
+
 		// deletes the gl buffers (cleans up all the data)
 		void destroy();
 	};

@@ -8,6 +8,7 @@
 #include "opengl.hpp"
 #include "basic_model.hpp"
 
+#include <vector>
 
 // Main application class
 //
@@ -35,6 +36,10 @@ private:
 	//temporary GLints for getting and altering shader information
 	GLint ambient_light;
 
+	int selected_mode = 0;
+	GLint core_shader;
+	GLint completion_shader;
+
 	bool mouse_held = false;
 
 public:
@@ -48,6 +53,10 @@ public:
 	// rendering callbacks (every frame)
 	void render();
 	void renderGUI();
+
+	//custom methods for generating textures and random transformations
+	std::vector<glm::mat4> create_random_transformations();
+	std::vector<glm::vec3> create_random_colors();
 
 	// input callbacks
 	void cursorPosCallback(double xpos, double ypos);

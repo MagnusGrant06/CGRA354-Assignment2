@@ -16,12 +16,13 @@
 struct basic_model {
 	GLuint shader = 0;
 	cgra::gl_mesh mesh;
-	glm::vec3 color{1, 0, 0};
+	glm::vec3 color{0, 0, 0};
 	glm::mat4 modelTransform{1.0};
 
 	glm::vec3 diffuse_color = glm::vec3(0.0, 0.0, 0.0);
 	glm::vec3 specular_color = glm::vec3(0.0, 0.0, 0.0);
 	float specular_strength = 0.5;
+	bool instancing = false;
 
 	void draw(const glm::mat4 &view, const glm::mat4 proj) {
 		using namespace glm;
@@ -40,6 +41,12 @@ struct basic_model {
 		glUniform1f(glGetUniformLocation(shader, "specular_strength"), specular_strength);
 
 		// draw the mesh
-		mesh.draw(); 
+		if (!instancing) {
+			mesh.draw();
+		}
+		else {
+			mesh.draw_instances();
+		}
+		
 	}
 };
