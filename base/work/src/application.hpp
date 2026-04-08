@@ -36,11 +36,15 @@ private:
 	//temporary GLints for getting and altering shader information
 	GLint ambient_light;
 
-	int selected_mode = 0;
 	GLint core_shader;
 	GLint completion_shader;
+	GLint texture_shader;
 
+	GLuint texture_object;
+
+	int selected_mode = 0;
 	bool mouse_held = false;
+	bool textured = false;
 
 public:
 	// setup

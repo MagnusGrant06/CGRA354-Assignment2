@@ -33,12 +33,20 @@ Application::Application(GLFWwindow *window) : m_window(window) {
 	color_sb.set_shader(GL_VERTEX_SHADER, CGRA_SRCDIR + std::string("//res//shaders//default_vert.glsl"));
 	color_sb.set_shader(GL_FRAGMENT_SHADER, CGRA_SRCDIR + std::string("//res//shaders//default_frag.glsl"));
 	GLuint color_shader = color_sb.build();
+
+	//build new shader for multiple instances
 	shader_builder completion_sb;
 	completion_sb.set_shader(GL_VERTEX_SHADER, CGRA_SRCDIR + std::string("//res//shaders/completion_vert.glsl"));
 	completion_sb.set_shader(GL_FRAGMENT_SHADER, CGRA_SRCDIR + std::string("//res//shaders/completion_frag.glsl"));
 
+	//build new shader for texture mapping
+	shader_builder texture_sb;
+	texture_sb.set_shader(GL_VERTEX_SHADER, CGRA_SRCDIR + std::string("//res//shaders/completion_vert.glsl"));
+	texture_sb.set_shader(GL_FRAGMENT_SHADER, CGRA_SRCDIR + std::string("//res//shaders/completion_texture_frag.glsl"));
+
 	core_shader = color_shader;
 	completion_shader = completion_sb.build();
+	texture_shader = texture_sb.build();
 
 	// build the mesh for the model
 	mesh_builder teapot_mb = load_wavefront_data(CGRA_SRCDIR + std::string("//res//assets//teapot.obj"));
@@ -62,6 +70,16 @@ Application::Application(GLFWwindow *window) : m_window(window) {
 
 	std::vector<glm::vec3> random_colors = create_random_colors();
 	glUniform3fv(glGetUniformLocation(completion_shader, "colors"), random_colors.size(), value_ptr(random_colors[0]));
+
+	//create texture
+	cgra::rgba_image texture(CGRA_SRCDIR + std::string("//res//textures//uv_texture.jpg"));
+	texture_object = texture.uploadTexture();
+
+	glUseProgram(texture_shader);
+	glUniform1i(glGetUniformLocation(texture_shader, "texture_sampler"), 0);
+	glUniformMatrix4fv(glGetUniformLocation(texture_shader, "transformations"), transformations.size(), false, glm::value_ptr(transformations[0]));
+
+
 }
 
 
@@ -98,6 +116,7 @@ void Application::render() {
 
 	//final translation to move pot to roughly middle of screen
 	mat4 view = translate(camera, vec3(0.0, -5.0, 0.0));
+
 	// draw options
 	if (m_show_grid) cgra::drawGrid(view, proj);
 	if (m_show_axis) cgra::drawAxis(view, proj);
@@ -136,11 +155,22 @@ void Application::renderGUI() {
 	}
 
 	if (selected_mode == 1) {
-		m_model.instancing = true;
-		m_model.shader = completion_shader;
-		ambient_color = glm::vec3(1, 1, 1);
-		m_model.diffuse_color = glm::vec3(1, 1, 1);
-		m_model.specular_color = glm::vec3(1, 1, 1);
+		ImGui::Checkbox("Textured", &textured);
+		if (!textured) {
+			m_model.instancing = true;
+			m_model.shader = completion_shader;
+			ambient_color = glm::vec3(1, 1, 1);
+			m_model.diffuse_color = glm::vec3(1, 1, 1);
+			m_model.specular_color = glm::vec3(1, 1, 1);
+		}
+		if (textured) {
+			m_model.shader = texture_shader;
+			ImGui::SliderFloat3("Ambient Light color", value_ptr(ambient_color), 0, 1, "%.2f");
+			ImGui::SliderFloat3("Diffuse Light color", value_ptr(m_model.diffuse_color), 0, 1, "%.2f");
+			ImGui::SliderFloat3("Specular Light color", value_ptr(m_model.specular_color), 0, 1, "%.2f");
+			ImGui::SliderFloat("Specular Strength", &m_model.specular_strength, 0, 1, "%.2f");
+
+		}
 	}
 
 	// extra drawing parameters
@@ -166,6 +196,7 @@ std::vector<glm::mat4> Application::create_random_transformations() {
 	for (int i = 0; i < 100; i++) {
 		glm::mat4 matrix = glm::translate(mat4(1.0f), glm::vec3(rand_pos(random), rand_pos(random), rand_pos(random)));
 		matrix = glm::rotate(matrix, glm::radians(rand_rot(random)), glm::vec3(0, 1, 0));
+		matrix = glm::rotate(matrix, glm::radians(rand_rot(random)), glm::vec3(1, 0, 0));
 		matrix = glm::scale(matrix, glm::vec3(rand_scal(random), rand_scal(random), rand_scal(random)));
 		transformations.push_back(matrix);
 	}
