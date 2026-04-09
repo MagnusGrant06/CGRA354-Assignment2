@@ -15,6 +15,12 @@
 
 namespace cgra {
 
+	struct mesh_vertex {
+		glm::vec3 pos{ 0 };
+		glm::vec3 norm{ 0 };
+		glm::vec2 uv{ 0 };
+	};
+
 	// A data structure for holding buffer IDs and other information related to drawing.
 	// Also has a helper functions for drawing the mesh and deleting the gl buffers.
 	// location 1 : positions (vec3)
@@ -27,22 +33,22 @@ namespace cgra {
 		GLenum mode = 0; // mode to draw in, eg: GL_TRIANGLES
 		int index_count = 0; // how many indicies to draw (no primitives)
 
+		std::vector<cgra::mesh_vertex> vertices; // vertex information to draw bounding boxes
+
 		// calls the draw function on mesh data
 		void draw();
 
 		//new draw function to draw multile instances
 		void draw_instances();
 
+		//new draw function to draw bounding boxes
+		//as i need to use glDrawElements instead of Arrays
+		void draw_bounding_boxes();
+
 		// deletes the gl buffers (cleans up all the data)
 		void destroy();
 	};
 
-
-	struct mesh_vertex {
-		glm::vec3 pos{0};
-		glm::vec3 norm{0};
-		glm::vec2 uv{0};
-	};
 
 
 	// Mesh builder object used to create an mesh by taking vertex and index information

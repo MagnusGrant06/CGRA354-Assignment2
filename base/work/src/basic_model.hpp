@@ -45,7 +45,12 @@ struct basic_model {
 			mesh.draw();
 		}
 		else {
-			mesh.draw_instances();
+			if (mesh.mode == GL_TRIANGLES) {
+				mesh.draw_instances();
+			}
+			else {
+				mesh.draw_bounding_boxes();
+			}
 		}
 		
 	}

@@ -71,6 +71,9 @@ Application::Application(GLFWwindow *window) : m_window(window) {
 	std::vector<glm::vec3> random_colors = create_random_colors();
 	glUniform3fv(glGetUniformLocation(completion_shader, "colors"), random_colors.size(), value_ptr(random_colors[0]));
 
+	//create first bounding box to draw
+	box_model = create_AABB(transformations);
+
 	//create texture
 	cgra::rgba_image texture(CGRA_SRCDIR + std::string("//res//textures//uv_texture.jpg"));
 	texture_object = texture.uploadTexture();
@@ -78,8 +81,6 @@ Application::Application(GLFWwindow *window) : m_window(window) {
 	glUseProgram(texture_shader);
 	glUniform1i(glGetUniformLocation(texture_shader, "texture_sampler"), 0);
 	glUniformMatrix4fv(glGetUniformLocation(texture_shader, "transformations"), transformations.size(), false, glm::value_ptr(transformations[0]));
-
-
 }
 
 
@@ -123,7 +124,11 @@ void Application::render() {
 	glPolygonMode(GL_FRONT_AND_BACK, (m_showWireframe) ? GL_LINE : GL_FILL);
 
 	// draw the model
+	if (show_bounding) {
+		box_model.draw(view, proj);
+	}
 	m_model.draw(view, proj);
+
 }
 
 
@@ -156,8 +161,10 @@ void Application::renderGUI() {
 
 	if (selected_mode == 1) {
 		ImGui::Checkbox("Textured", &textured);
+		ImGui::Checkbox("Bounding Box", &show_bounding);
+		m_model.instancing = true;
+		box_model.instancing = true;
 		if (!textured) {
-			m_model.instancing = true;
 			m_model.shader = completion_shader;
 			ambient_color = glm::vec3(1, 1, 1);
 			m_model.diffuse_color = glm::vec3(1, 1, 1);
@@ -214,6 +221,35 @@ std::vector<glm::vec3> Application::create_random_colors() {
 		colors.push_back(temp_col);
 	}
 	return colors;
+}
+
+basic_model Application::create_AABB(std::vector<glm::mat4> transformations) {
+	std::vector<cgra::mesh_vertex> base_vertices = m_model.mesh.vertices;
+	basic_model bounding_box;
+
+	glm::vec3 min_pos = base_vertices[0].pos;
+	glm::vec3 max_pos = base_vertices[0].pos;
+	for (cgra::mesh_vertex vert : base_vertices) {
+		min_pos = min(vert.pos, min_pos);
+		max_pos = max(vert.pos, max_pos);
+	}
+
+	shader_builder box_sb;
+	box_sb.set_shader(GL_VERTEX_SHADER, CGRA_SRCDIR + std::string("//res//shaders//bounding_box_vert.glsl"));
+	box_sb.set_shader(GL_FRAGMENT_SHADER, CGRA_SRCDIR + std::string("//res//shaders//bounding_box_frag.glsl"));
+	
+	GLuint box_shader = box_sb.build();
+	cgra::gl_mesh box_mesh = createBoundingBoxMesh(min_pos, max_pos);
+
+	glUseProgram(box_shader);
+	glUniformMatrix4fv(glGetUniformLocation(box_shader, "transformations"), transformations.size(), false, glm::value_ptr(transformations[0]));
+
+	bounding_box.mesh = box_mesh;
+	bounding_box.shader = box_shader;
+	bounding_box.color = glm::vec3(1, 0, 0);
+	bounding_box.modelTransform = glm::mat4(1);
+
+	return bounding_box;
 }
 
 void Application::cursorPosCallback(double xpos, double ypos) {

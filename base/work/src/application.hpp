@@ -32,6 +32,7 @@ private:
 	// contains a shader, a model transform
 	// a mesh, and other model information (color etc.)
 	basic_model m_model;
+	basic_model box_model;
 
 	//temporary GLints for getting and altering shader information
 	GLint ambient_light;
@@ -45,6 +46,7 @@ private:
 	int selected_mode = 0;
 	bool mouse_held = false;
 	bool textured = false;
+	bool show_bounding = false;
 
 public:
 	// setup
@@ -61,6 +63,8 @@ public:
 	//custom methods for generating textures and random transformations
 	std::vector<glm::mat4> create_random_transformations();
 	std::vector<glm::vec3> create_random_colors();
+
+	basic_model create_AABB(std::vector<glm::mat4> transformations);
 
 	// input callbacks
 	void cursorPosCallback(double xpos, double ypos);

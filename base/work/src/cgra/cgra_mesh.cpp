@@ -19,10 +19,16 @@ namespace cgra {
 		glDrawElements(mode, index_count, GL_UNSIGNED_INT, 0);
 	}
 
-	void gl_mesh::draw_instances(){
+	void gl_mesh::draw_instances() {
 		if (vao == 0) return;
 		glBindVertexArray(vao);
-		glDrawArraysInstanced(GL_TRIANGLES, 0, index_count, 100);
+		glDrawArraysInstanced(mode, 0, index_count, 100);
+	}
+
+	void gl_mesh::draw_bounding_boxes() {
+		if (vao == 0) return;
+		glBindVertexArray(vao);
+		glDrawElementsInstanced(mode, 100, GL_UNSIGNED_INT, 0, 100);
 	}
 
 	void gl_mesh::destroy() {
@@ -76,6 +82,7 @@ namespace cgra {
 		// set the index count and draw modes
 		m.index_count = indices.size();
 		m.mode = mode;
+		m.vertices = vertices;
 
 		// clean up by binding VAO 0 (good practice)
 		glBindVertexArray(0);
