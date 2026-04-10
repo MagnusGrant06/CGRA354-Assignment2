@@ -143,25 +143,29 @@ void Application::renderGUI() {
 	ImGui::Text("Application %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::SliderFloat("Distance", &m_distance, 0, 100, "%.1f");
 	ImGui::SliderFloat3("Model Color", value_ptr(m_model.color), 0, 1, "%.2f");
-	ImGui::SliderFloat2("Rotate Camera", value_ptr(camera_rotation), -89.0f, 89.0f);
+	ImGui::SliderFloat("Rotate Camera X", &camera_rotation.x, 0.0f, 360.0f);
+	ImGui::SliderFloat("Rotate Camera Y", &camera_rotation.y, -89.0f, 89.0f);
 
 	//drop down menu for choosing core, completion, and challenge
-	const char* modes[] = { "Core", "Completion", "Challenge" };
+	const char* modes[] = { "Core", "Completion"};
 	ImGui::Combo("Choose Part", &selected_mode, modes, sizeof(modes) / sizeof(modes[0]));
 
 	//custom sliders for core
 	if(selected_mode == 0){
 		m_model.shader = core_shader;
 		m_model.instancing = false;
+		box_model.instancing = false;
+		textured = false;
 		ImGui::SliderFloat3("Ambient Light color", value_ptr(ambient_color), 0, 1, "%.2f");
 		ImGui::SliderFloat3("Diffuse Light color", value_ptr(m_model.diffuse_color), 0, 1, "%.2f");
 		ImGui::SliderFloat3("Specular Light color", value_ptr(m_model.specular_color), 0, 1, "%.2f");
 		ImGui::SliderFloat("Specular Strength", &m_model.specular_strength, 0, 1, "%.2f");
+		ImGui::SliderFloat("Shininess", &m_model.shininess, 0, 80, "%.2f");
 	}
 
 	if (selected_mode == 1) {
 		ImGui::Checkbox("Textured", &textured);
-		ImGui::Checkbox("Bounding Box", &show_bounding);
+		ImGui::Checkbox("Bounding Box (Challenge)", &show_bounding);
 		m_model.instancing = true;
 		box_model.instancing = true;
 		if (!textured) {
@@ -176,6 +180,7 @@ void Application::renderGUI() {
 			ImGui::SliderFloat3("Diffuse Light color", value_ptr(m_model.diffuse_color), 0, 1, "%.2f");
 			ImGui::SliderFloat3("Specular Light color", value_ptr(m_model.specular_color), 0, 1, "%.2f");
 			ImGui::SliderFloat("Specular Strength", &m_model.specular_strength, 0, 1, "%.2f");
+			ImGui::SliderFloat("Shininess", &m_model.shininess, 0, 80, "%.2f");
 
 		}
 	}
@@ -192,6 +197,7 @@ void Application::renderGUI() {
 	ImGui::End();
 }
 
+// create and return a vector of random transformations using mersenne twister
 std::vector<glm::mat4> Application::create_random_transformations() {
 	std::vector<glm::mat4> transformations;
 
@@ -210,6 +216,7 @@ std::vector<glm::mat4> Application::create_random_transformations() {
 	return transformations;
 }
 
+// similar to create_random_transformations except for colors
 std::vector<glm::vec3> Application::create_random_colors() {
 	std::vector<glm::vec3> colors;
 
@@ -223,13 +230,14 @@ std::vector<glm::vec3> Application::create_random_colors() {
 	return colors;
 }
 
+// creating and returning a basic_model for the bounding box
 basic_model Application::create_AABB(std::vector<glm::mat4> transformations) {
 	std::vector<cgra::mesh_vertex> base_vertices = m_model.mesh.vertices;
 	basic_model bounding_box;
 
 	glm::vec3 min_pos = base_vertices[0].pos;
 	glm::vec3 max_pos = base_vertices[0].pos;
-	for (cgra::mesh_vertex vert : base_vertices) {
+	for (cgra::mesh_vertex vert : base_vertices) {  // find minimum and maximum point to create corners of box
 		min_pos = min(vert.pos, min_pos);
 		max_pos = max(vert.pos, max_pos);
 	}
@@ -239,7 +247,7 @@ basic_model Application::create_AABB(std::vector<glm::mat4> transformations) {
 	box_sb.set_shader(GL_FRAGMENT_SHADER, CGRA_SRCDIR + std::string("//res//shaders//bounding_box_frag.glsl"));
 	
 	GLuint box_shader = box_sb.build();
-	cgra::gl_mesh box_mesh = createBoundingBoxMesh(min_pos, max_pos);
+	cgra::gl_mesh box_mesh = createBoundingBoxMesh(min_pos, max_pos);      // use pre-defined bounding box method provided
 
 	glUseProgram(box_shader);
 	glUniformMatrix4fv(glGetUniformLocation(box_shader, "transformations"), transformations.size(), false, glm::value_ptr(transformations[0]));

@@ -22,6 +22,7 @@ struct basic_model {
 	glm::vec3 diffuse_color = glm::vec3(0.0, 0.0, 0.0);
 	glm::vec3 specular_color = glm::vec3(0.0, 0.0, 0.0);
 	float specular_strength = 0.5;
+	float shininess = 32;
 	bool instancing = false;
 
 	void draw(const glm::mat4 &view, const glm::mat4 proj) {
@@ -39,6 +40,7 @@ struct basic_model {
 		glUniform3f(glGetUniformLocation(shader, "diffuse_light_color"), diffuse_color.x,diffuse_color.y,diffuse_color.z);
 		glUniform3f(glGetUniformLocation(shader, "specular_light_color"), specular_color.x, specular_color.y, specular_color.z);
 		glUniform1f(glGetUniformLocation(shader, "specular_strength"), specular_strength);
+		glUniform1f(glGetUniformLocation(shader, "shininess"), shininess);
 
 		// draw the mesh
 		if (!instancing) {

@@ -9,6 +9,7 @@ uniform vec3 ambient_light_color;
 uniform vec3 diffuse_light_color;
 uniform vec3 specular_light_color;
 uniform float specular_strength;
+uniform float shininess;
 
 // viewspace data (this must match the output of the fragment shader)
 in VertexData {
@@ -38,7 +39,7 @@ void main() {
 	vec3 reflection_direction = reflect(-light_direction, norm);
 	vec3 view_direction = normalize(-f_in.position);
 	
-	float spec = pow(max(dot(view_direction, reflection_direction), 0.0), 32);
+	float spec = pow(max(dot(view_direction, reflection_direction), 0.0), shininess);
 	vec3 specular = specular_strength * spec * specular_light_color;
 
 	//final output color
